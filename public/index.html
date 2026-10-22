@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script>
+    // 防语言闪烁：词条就绪前先暂隐页面（i18n 框架刷完文案后摘除 i18n-boot 再显示）；同步书写方向（阿语 RTL）
+    (function () {
+        try {
+            var lang = localStorage.getItem('linker:locale')
+            if (lang) {
+                document.documentElement.lang = lang
+                if (lang === 'ar-SA') document.documentElement.dir = 'rtl'
+            }
+            document.documentElement.classList.add('i18n-boot')
+            setTimeout(function () { document.documentElement.classList.remove('i18n-boot') }, 3000)
+        } catch (e) {}
+    })()
+    </script>
+    <title data-i18n="app.brand"></title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h1 id="app-title" data-i18n="app.brand"></h1>
+    <span class="spacer"></span>
+    <button id="btn-expand-all" data-i18n="header.expandAll"></button>
+    <button id="btn-fit" data-i18n="header.fitView"></button>
+    <button id="btn-bg-color" data-i18n="header.bgColor"></button>
+  <div id="export-menu">
+    <button id="btn-export" data-i18n="header.export"></button>
+    <div id="export-pop" class="pop menu-root hidden"></div>
+  </div>
+    <button id="btn-lang" data-i18n-title="lang.title">🌐</button>
+</header>
+<div id="main">
+    <aside id="organization-panel">
+        <div class="panel-head">
+            <div class="side-title" data-i18n="panel.organization"></div>
+            <button id="btn-collapse-left" class="collapse-btn">‹</button>
+        </div>
+        <div class="organization-row organization-global active" id="row-global"><span class="toggle placeholder"></span><span
+                class="oname" data-i18n="panel.global"></span></div>
+        <button id="btn-new-root" class="block-btn" data-i18n="panel.newRootButton"></button>
+        <div id="organization-tree"></div>
+    </aside>
+    <div id="canvas-wrap">
+        <svg id="svg">
+            <g id="viewport"></g>
+        </svg>
+    </div>
+    <aside id="sidebar">
+        <div class="panel-head">
+            <div class="side-title" data-i18n="panel.persons"></div>
+            <button id="btn-collapse-right" class="collapse-btn">›</button>
+        </div>
+        <button id="btn-add-person" class="block-btn" data-i18n="panel.newPersonButton"></button>
+        <input id="person-filter" type="text" data-i18n-placeholder="panel.filterPlaceholder" autocomplete="off">
+        <div id="person-list"></div>
+    </aside>
+</div>
+
+<div id="ctx-menu" class="pop menu-root hidden"></div>
+<script type="module" src="events.js"></script>
+</body>
+</html>

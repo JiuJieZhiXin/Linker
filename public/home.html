@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+    // 防语言闪烁：词条就绪前先暂隐页面（i18n 框架刷完文案后摘除 i18n-boot 再显示）；同步书写方向（阿语 RTL）
+    (function () {
+        try {
+            var lang = localStorage.getItem('linker:locale')
+            if (lang) {
+                document.documentElement.lang = lang
+                if (lang === 'ar-SA') document.documentElement.dir = 'rtl'
+            }
+            document.documentElement.classList.add('i18n-boot')
+            setTimeout(function () { document.documentElement.classList.remove('i18n-boot') }, 3000)
+        } catch (e) {}
+    })()
+    </script>
+    <title data-i18n="home.title"></title>
+    <link rel="stylesheet" href="/~/home.css">
+</head>
+<body>
+<div class="home-head">
+    <h1 data-i18n="app.brand"></h1>
+    <button id="btn-lang" data-i18n-title="lang.title">🌐</button>
+</div>
+<div id="notice"></div>
+<form method="POST" action="/api/create">
+    <input name="name" data-i18n-placeholder="home.dbName" pattern="[\w-]+" maxlength="64" required autofocus>
+    <button type="submit" data-i18n="home.create"></button>
+</form>
+<p data-i18n="home.hintChars"></p>
+<p data-i18n="home.hintVisit"></p>
+<script type="module" src="/~/home.js"></script>
+</body>
+</html>

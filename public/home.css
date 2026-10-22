@@ -1,0 +1,131 @@
+/* 新建数据库首页样式（根页面 / 专用；库内页面样式见 style.css） */
+/* 语言就绪前暂隐页面：防非中文语言刷新时先闪一帧中文（i18n 应用词条后摘除该类，见 home.html 内联脚本） */
+html.i18n-boot {
+	visibility: hidden;
+}
+
+body {
+	font-family: "Segoe UI", Tahoma, system-ui, sans-serif; /* Segoe UI/Tahoma 覆盖阿拉伯文 */
+	max-width: 360px;
+	margin: 90px auto;
+	padding: 0 16px;
+}
+
+/* 标题行：品牌居左，🌐 语言按钮居右 */
+.home-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 24px;
+}
+
+.home-head h1 {
+	font-size: 22px;
+	line-height: 1.5; /* 品牌名跨语言行高稳定 */
+}
+
+/* 🌐 语言按钮（与库内头部同款：地球图符 + 悬浮提示） */
+#btn-lang {
+	font-size: 16px;
+	line-height: 1;
+	padding: 6px 10px;
+	background: #fff;
+	border: 1px solid #d4dae6;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+/* 界面语言弹窗（仅界面语言单选；结构复用库内 .modal 体系） */
+.modal-mask {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	background: rgba(23, 32, 54, .28);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.modal-mask .modal {
+	background: #fff;
+	border-radius: 12px;
+	box-shadow: 0 12px 40px rgba(20, 40, 90, .2);
+	padding: 18px 22px;
+	min-width: 240px;
+	max-width: calc(100vw - 32px);
+	font-size: 13px;
+	color: #2b3445;
+}
+
+.modal .pop-title {
+	font-weight: 600;
+	margin-bottom: 14px;
+	text-align: center;
+	font-size: 14px;
+	line-height: 1.5; /* 标题跨语言行高稳定 */
+}
+
+.modal .set-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 7px 10px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.modal .set-row:hover {
+	background: #f0f4ff;
+}
+
+.modal .menu-check {
+	color: #4a7dff;
+	font-size: 12px;
+}
+
+.modal .btns {
+	display: flex;
+	justify-content: center;
+	margin-top: 14px;
+}
+
+.modal .btns button {
+	padding: 6px 18px;
+	font-size: 13px;
+	background: #fff;
+	border: 1px solid #d4dae6;
+	border-radius: 6px;
+	cursor: pointer;
+	color: #4a5568;
+}
+
+form {
+	display: flex;
+	gap: 8px;
+	align-items: stretch;
+}
+
+input {
+	flex: 1;
+	padding: 8px 10px;
+	font-size: 14px;
+	line-height: 1.5; /* 固定行高：占位符随语言切换（中/日全角字形行盒偏高、英文偏矮），不固定输入框会变矮 */
+}
+
+button {
+	padding: 8px 18px;
+	font-size: 14px;
+	line-height: 1.5; /* 与输入框同高，同行对齐不浮动 */
+	cursor: pointer;
+}
+
+p {
+	color: #888;
+	font-size: 13px;
+	line-height: 1.7;
+}
+
+.notice {
+	color: #c00;
+}
