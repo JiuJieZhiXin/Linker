@@ -2,7 +2,7 @@
 
 # واصل
 
-&#x200F;[![الإصدار](https://img.shields.io/badge/version-0.2.0-brightgreen)](https://github.com/JiuJieZhiXin/Linker)
+&#x200F;[![الإصدار](https://img.shields.io/badge/version-0.2.1-brightgreen)](https://github.com/JiuJieZhiXin/Linker)
 [![الرخصة](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22.13-339933)](package.json)
 [![التبعيات](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)

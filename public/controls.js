@@ -1,10 +1,10 @@
 // controls.js — 统一控件管理：菜单（右键菜单 / 导出下拉与二级子菜单）与模态框
 // 所有弹出控件（.pop 面板 / 模态框遮罩）的显隐统一走 .hidden 类或建删 DOM；
 // 菜单项渲染（html.js menuHtml）、分发、互斥、外部点击收起只在此一处维护。
-import {keyOf, domKey, store, setMetaOp, createOrganizationOp, createPersonOp, createPersonPersonOp, updatePersonPersonOp, getAuthLang, getEnabledLangs, putEnabledLangs, personByAuthName} from './data.js'
+import {keyOf, domKey, store, setMetaOp, createOrganizationOp, createPersonOp, createPersonPersonOp, updatePersonPersonOp, getAuthLang, getEnabledLangs, putEnabledLangs, personByAuthName, resolveNameFor} from './data.js'
 import {menuHtml, nameModalHtml, bgColorModalHtml, personPersonFormHtml, organizationDeleteConfirmHtml, languageModalHtml, enabledLangsModalHtml, personExistsConfirmHtml, personPickerHtml} from './html.js'
 import {render, revealPerson, getDbUiLang} from './view.js'
-import {availableLocales, t} from './i18n.js'
+import {availableLocales, getLocale, t} from './i18n.js'
 import {nameModalMode, entryMode, chooseEntryMode} from './settings.js'
 
 // ============================================================
@@ -124,10 +124,52 @@ export function showModal(html, kind, payload) {
 	mask.innerHTML = `<div class="modal modal-${kind}">${html}</div>`
 	document.body.appendChild(mask)
 	modalStack.push({mask, kind, payload})
+	refreshEntryPlaceholders() // 建框后刷一次 placeholder（html.js 语言行渲染不带 placeholder，由这里统一填）
 	const input = mask.querySelector(`input`)
 	if (input) {
 		input.focus()
 		input.select()
+	}
+}
+
+// ---- 弹窗 placeholder 统一刷新 ----
+// 原则：placeholder = 假设本行为空时的显示值（own-slot-excluded——本行现值不参与回退链解析：改本行文本不影响本行 placeholder，清空后即时显现回退链解析值）
+// 一次收集 DOM 当前槽值，对框内每个语言行以 {...slots, [code]: ''} 重算；名称弹窗（nm-*）与关系表单两方向（pp-f-*/pp-b-*）各自独立槽表，没有对应输入框时静默跳过
+// 全框统一刷新而非只刷编辑行：链依赖任意方向都覆盖——改 zh-Hans 行的值，回退到它的 zh-Hant 行 placeholder 同步更新；作准行/作准组（字段名）与 nm-bare / pp-{dir}-bare（静态 placeholder）不动；nm-lang 映射 getLocale()
+export function refreshEntryPlaceholders() {
+	const auth = getAuthLang()
+	const nmRows = [...document.querySelectorAll(`input[id^="nm-"]`)]
+	if (nmRows.length) {
+		const codeOf = el => el.id === `nm-lang` ? getLocale() : el.id.slice(3) // dual 当前语言行 id 为 nm-lang
+		const authEl = document.getElementById(`nm-auth`)
+		const slots = {}
+		if (authEl) slots[auth] = authEl.value
+		nmRows.forEach(el => {
+			if (el.id === `nm-auth` || el.id === `nm-bare`) return
+			const code = codeOf(el)
+			if (code !== auth && el.value) slots[code] = el.value
+		})
+		nmRows.forEach(el => {
+			if (el.id === `nm-auth` || el.id === `nm-bare`) return
+			el.placeholder = resolveNameFor(codeOf(el), {...slots, [codeOf(el)]: ``})
+		})
+	}
+	for (const dir of [`f`, `b`]) {
+		const pre = `pp-${dir}-`
+		const rows = [...document.querySelectorAll(`input[id^="${pre}"]`)]
+		if (!rows.length) continue
+		const authEl = document.getElementById(pre + `auth`)
+		const slots = {}
+		if (authEl) slots[auth] = authEl.value
+		rows.forEach(el => {
+			if (el.id === pre + `auth` || el.id === pre + `bare`) return
+			if (el.value) slots[el.id.slice(pre.length)] = el.value
+		})
+		rows.forEach(el => {
+			if (el.id === pre + `auth` || el.id === pre + `bare`) return
+			const code = el.id.slice(pre.length)
+			el.placeholder = resolveNameFor(code, {...slots, [code]: ``})
+		})
 	}
 }
 

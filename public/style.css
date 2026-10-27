@@ -678,8 +678,7 @@ input.invalid {
 	border-radius: 12px;
 	box-shadow: 0 12px 40px rgba(20, 40, 90, .2);
 	padding: 18px 22px;
-	min-width: 300px; /* 下限保名称输入框不拥挤，短内容（删除确认）宽度随内容收缩 */
-	max-width: calc(100vw - 32px);
+	max-width: calc(100vw - 32px); /* 宽度由内容决定：200px 输入 + 标签列 + padding 已自带下限，删除确认类短弹窗随内容收缩 */
 	font-size: 13px;
 	color: #2b3445;
 }
@@ -791,9 +790,14 @@ input.invalid {
 	border-radius: 6px;
 	padding: 6px 10px;
 	font-size: 13px;
-	width: 130px;
+	width: 200px;
 	outline: none;
 	text-align: center;
+}
+
+/* 拾色器保持紧凑（名称弹窗输入已统一 200px） */
+#bg-color-input {
+	width: 130px;
 }
 
 .person-person-io input:focus {

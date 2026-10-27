@@ -7,7 +7,7 @@ import {
 	deletePersonOp, assignOp, unassignOp, moveAssignmentOp, moveAssignmentToIdentityOp, moveIdentityToOrganizationOp, setMetaOp, newPerson,
 	createPersonOp, personsByAuthName,
 	renameOrganizationOp, renameIdentityOp, renamePersonOp, insertParentOrganizationOp, deletePersonPersonOp,
-	reresolveAll, getAuthLang, putAuthoritativeLang, resolveNameFor,
+	reresolveAll, getAuthLang, putAuthoritativeLang,
 } from './data.js'
 import {
 	vs, render, renderSidebar, applyTransform, zoomAt, fitView,
@@ -18,6 +18,7 @@ import {
 	showCtxMenu, closeCtxMenu, closeModal, isModalOpen, submitModal, submitConfirm,
 	openNameModal, openBgColorModal, openPersonPersonForm, openPersonPersonEdit, openNewRootOrganization, openAddPerson, openOrganizationDeleteConfirm, openPersonExistsConfirm, openPersonPicker, submitPick,
 	openLanguageModal, refreshLanguageModal, showToast, openEnabledLangsModal, closeEnabledLayer, submitEnabledLayer,
+	refreshEntryPlaceholders,
 	closeAllMenus,
 } from './controls.js'
 import {
@@ -1492,36 +1493,8 @@ function updateBgColorPreview() {
 }
 document.addEventListener(`input`, e => {
 	if (e.target && (e.target.id === `bg-color-input` || e.target.id === `bg-alpha-input`)) updateBgColorPreview()
-	// 名称弹窗（dual/full）：作准值覆盖作准槽 + 各语言行现值合成槽表，按回退链实时解析各语言行 placeholder（该语言留空时的实际显示值）；作准行自身不动
-	if (e.target && e.target.id === `nm-auth`) {
-		const auth = getAuthLang()
-		const slots = {[auth]: e.target.value}
-		document.querySelectorAll(`input[id^="nm-"]`).forEach(el => {
-			if (el.id === `nm-auth`) return
-			const code = el.id === `nm-lang` ? getLocale() : el.id.slice(3) // dual 当前语言行 id 为 nm-lang
-			if (code !== auth && el.value) slots[code] = el.value
-		})
-		document.querySelectorAll(`input[id^="nm-"]`).forEach(el => {
-			if (el.id === `nm-auth`) return
-			const code = el.id === `nm-lang` ? getLocale() : el.id.slice(3)
-			el.placeholder = resolveNameFor(code, slots)
-		})
-	}
-	// 关系表单多语言：某方向作准值覆盖作准槽 + 该方向语言行现值合成槽表，按回退链实时解析 placeholder；作准组自身不动
-	if (e.target && (e.target.id === `pp-f-auth` || e.target.id === `pp-b-auth`)) {
-		const dir = e.target.id === `pp-f-auth` ? `f` : `b`
-		const pre = `pp-${dir}-`
-		const auth = getAuthLang()
-		const slots = {[auth]: e.target.value}
-		document.querySelectorAll(`input[id^="${pre}"]`).forEach(el => {
-			if (el.id === pre + `auth`) return
-			if (el.value) slots[el.id.slice(pre.length)] = el.value
-		})
-		document.querySelectorAll(`input[id^="${pre}"]`).forEach(el => {
-			if (el.id === pre + `auth`) return
-			el.placeholder = resolveNameFor(el.id.slice(pre.length), slots)
-		})
-	}
+	// 名称/关系弹窗内任意输入 → 统一刷新全框 placeholder（own-slot-excluded 原则、作准/静态行豁免、语言间链依赖全方向覆盖都在 refreshEntryPlaceholders 内）
+	if (e.target && /^(nm-|pp-[fb]-)/.test(e.target.id)) refreshEntryPlaceholders()
 })
 
 // 语言弹窗：作准语言变更 → PUT meta（落库并广播）；成功本地 setAuthLang 全量重解析显示名，失败 toast 错误码

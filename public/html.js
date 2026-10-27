@@ -1,6 +1,6 @@
 // html.js — 纯函数层：接收数据，输出 HTML/SVG 文本与坐标登记表
 // 不做任何 DOM 挂载（文本宽度用离屏 canvas 测量），不绑定事件（事件在 events.js 里全局代理）。
-import {store, keyOf, domKey, newPerson, ppLabel, getAuthLang, getEnabledLangs, resolveNameFor} from './data.js'
+import {store, keyOf, domKey, newPerson, ppLabel, getAuthLang, getEnabledLangs} from './data.js'
 import {availableLocales, getLocale, isRtl, t} from './i18n.js'
 
 // ---- 静态配置（不变动的布局常量与配色） ----
@@ -31,6 +31,9 @@ export const FONT_FAMILY = `"Segoe UI", Tahoma, "PingFang SC", "Microsoft YaHei"
 const FONT_ORG = `12.5px ${FONT_FAMILY}`
 const FONT_IDENTITY = `11px ${FONT_FAMILY}`
 const FONT_CNT = `10px ${FONT_FAMILY}`
+
+// placeholder 语义 = 「假设该语言槽为空」的显示值：解析时强制该槽为空（自己不可能是自己的回退语言）；
+// 初始渲染与 events.js 实时联动同一规则
 
 // 每人一个稳定颜色（按 domKey 取色，多处担任一眼可辨）；
 // 新建未落库的人物（tmp-N 临时 dom）用近黑占位，真实 id 回赋后恢复哈希取色
@@ -668,24 +671,24 @@ export function nameModalHtml({title, placeholder = ``, value = ``, mode = `bare
 			const curLoc = locales.find(x => x.code === lang) || locales[0]
 			const titleOrdered = [curLoc].concat(locales.filter(x => x.code !== curLoc.code))
 			rows = titleOrdered.map(({code, name}) => `
-    <div class="person-person-io"><span class="io-label">${esc(name)}</span><input id="nm-${code}" maxlength="30" style="width:200px" placeholder="${esc(libVal)}" value="${esc(values[code] || ``)}"></div>`).join(``)
+    <div class="person-person-io"><span class="io-label">${esc(name)}</span><input id="nm-${code}" maxlength="30" placeholder="${esc(libVal)}" value="${esc(values[code] || ``)}"></div>`).join(``)
 		} else {
 			// 单输入形态（T1 无影响）：单输入 = 当前语言槽，placeholder = 库名值（留空回退库名的提示）
 			rows = `
-    <div class="person-person-io"><input id="nm-bare" maxlength="30" style="width:240px" placeholder="${esc(libVal)}" value="${esc(value)}"></div>`
+    <div class="person-person-io"><input id="nm-bare" maxlength="30" placeholder="${esc(libVal)}" value="${esc(value)}"></div>`
 		}
 	} else if (mode === `bare`) {
 		// bare：不显示任何语言标签，单输入 = 当前界面语言槽（作准=界面时它也是作准槽；nameModalMode 保证界面语言∈启用集）
 		// placeholder（形态表）：作准=界面 → 字段名（XX名称）；作准≠界面 → 作准值（现用名；作准槽为空的编辑已强制 dual，不会走到这）
 		const ph = auth === lang ? placeholder : authValue
 		rows = `
-    <div class="person-person-io"><input id="nm-bare" maxlength="30" style="width:240px" placeholder="${esc(ph)}" value="${esc(value)}"></div>`
+    <div class="person-person-io"><input id="nm-bare" maxlength="30" placeholder="${esc(ph)}" value="${esc(value)}"></div>`
 	} else if (mode === `auth`) {
 		// auth：界面语言∉启用集（nameModalMode 保证）——bare 契约不成立，退化为带标签的作准单输入（作准行形态同 dual）
 		rows = `
-    <div class="person-person-io"><span class="io-label"><b>${langLabel(auth)}</b></span><input id="nm-auth" maxlength="30" style="width:200px" placeholder="${esc(placeholder)}" value="${esc(authValue)}"></div>`
+    <div class="person-person-io"><span class="io-label"><b>${langLabel(auth)}</b></span><input id="nm-auth" maxlength="30" placeholder="${esc(placeholder)}" value="${esc(authValue)}"></div>`
 	} else if (mode === `full`) {
-		// 行序 [作准(加粗), 当前, 其他按启用语言排序]（作准恒在启用集首位；当前行仅启用时显示）；placeholder = 留空时的实际回退显示值（输入作准值时实时联动，见 events.js）
+		// 行序 [作准(加粗), 当前, 其他按启用语言排序]（作准恒在启用集首位；当前行仅启用时显示）；语言行渲染不带 placeholder，由挂载后的 refreshEntryPlaceholders 统一填（见 controls.js）
 		const curLoc = locales.find(x => x.code === lang)
 		const enOrdered = getEnabledLangs()
 		const en = new Set(enOrdered)
@@ -694,14 +697,14 @@ export function nameModalHtml({title, placeholder = ``, value = ``, mode = `bare
 			.concat(enOrdered.filter(c => c !== auth && c !== lang).map(c => locales.find(x => x.code === c) || {code: c, name: c}))
 			.filter(({code}) => en.has(code))
 		rows = ordered.map(({code, name}) => code === auth
-			? `<div class="person-person-io"><span class="io-label"><b>${esc(name)}</b></span><input id="nm-auth" maxlength="30" style="width:200px" placeholder="${esc(placeholder)}" value="${esc(authValue)}"></div>`
+			? `<div class="person-person-io"><span class="io-label"><b>${esc(name)}</b></span><input id="nm-auth" maxlength="30" placeholder="${esc(placeholder)}" value="${esc(authValue)}"></div>`
 			: `
-    <div class="person-person-io"><span class="io-label">${esc(name)}</span><input id="nm-${code}" maxlength="30" style="width:200px" placeholder="${esc(resolveNameFor(code, values))}" value="${esc(values[code] || ``)}"></div>`).join(``)
+    <div class="person-person-io"><span class="io-label">${esc(name)}</span><input id="nm-${code}" maxlength="30" value="${esc(values[code] || ``)}"></div>`).join(``)
 	} else {
-		// dual（nameModalMode 保证 作准≠界面）：作准行（加粗带标签）+ 当前语言行（带标签，可空，placeholder = 留空时的实际回退显示值）
+		// dual（nameModalMode 保证 作准≠界面）：作准行（加粗带标签）+ 当前语言行（带标签，可空；placeholder 由挂载后的 refreshEntryPlaceholders 统一填）
 		rows = `
-    <div class="person-person-io"><span class="io-label"><b>${langLabel(auth)}</b></span><input id="nm-auth" maxlength="30" style="width:200px" placeholder="${esc(placeholder)}" value="${esc(authValue)}"></div>
-    <div class="person-person-io"><span class="io-label">${langLabel(lang)}</span><input id="nm-lang" maxlength="30" style="width:200px" placeholder="${esc(resolveNameFor(lang, values))}" value="${esc(value)}"></div>`
+    <div class="person-person-io"><span class="io-label"><b>${langLabel(auth)}</b></span><input id="nm-auth" maxlength="30" placeholder="${esc(placeholder)}" value="${esc(authValue)}"></div>
+    <div class="person-person-io"><span class="io-label">${langLabel(lang)}</span><input id="nm-lang" maxlength="30" value="${esc(value)}"></div>`
 	}
 	return `
     <div class="pop-title">${esc(title)}</div>
@@ -844,7 +847,7 @@ export function personPersonFormHtml(A, B, {title = t(`modal.newRelation`), mode
 		const fill = s => esc(s).replace(`{a}`, `<b>${esc(aName)}</b>`).replace(`{b}`, `<b>${esc(bName)}</b>`)
 		return fill(head) + inputHtml + fill(tail)
 	}
-	const input = (id, val, ph) => `<input id="${id}" maxlength="10" placeholder="${esc(ph)}" value="${esc(val)}">`
+	const input = (id, val, ph) => `<input id="${id}" maxlength="10" value="${esc(val)}"${ph != null ? ` placeholder="${esc(ph)}"` : ``}>`
 	let ioRows = ``
 	if (mode === `bare`) {
 		// bare：不显示任何语言标签，每方向一个输入 = 当前界面语言槽（nameModalMode 保证界面语言∈启用集）
@@ -881,20 +884,18 @@ export function personPersonFormHtml(A, B, {title = t(`modal.newRelation`), mode
 			? (cur ? [cur] : []).concat(rest.filter(x => x.code !== lang))
 			: (cur ? [cur] : [])
 		const ordered = [authLoc].concat(langGroups)
-		// placeholder：作准组显示字段名（关系标签）；语言组 = 该语言留空时的实际回退显示值（实时联动见 events.js）
+		// placeholder：作准组显示字段名（关系标签）；语言组渲染不带 placeholder，由挂载后的 refreshEntryPlaceholders 统一填
 		ioRows = ordered.map(({code, name}) => {
 			// 作准组输入 id 固定 pp-f-auth / pp-b-auth（提交与 placeholder 联动的锚点）；语言组按语言码
 			const key = code === auth ? `auth` : code
 			const cap = code === auth ? `<b>${esc(name)}</b>` : esc(name)
 			const fVal = code === auth ? forward : (fwdSlots[code] || ``)
 			const bVal = code === auth ? backward : (bwdSlots[code] || ``)
-			const fPh = code === auth ? t(`relation.basePlaceholder`) : resolveNameFor(code, fwdSlots)
-			const bPh = code === auth ? t(`relation.basePlaceholder`) : resolveNameFor(code, bwdSlots)
 			return `
     <div class="pp-lang-group">
       <div class="pp-lang-cap">${cap}</div>
-      <div class="person-person-io">${sentence(A.personName, B.personName, input(`pp-f-${key}`, fVal, fPh))}</div>
-      <div class="person-person-io">${sentence(B.personName, A.personName, input(`pp-b-${key}`, bVal, bPh))}</div>
+      <div class="person-person-io">${sentence(A.personName, B.personName, code === auth ? input(`pp-f-${key}`, fVal, t(`relation.basePlaceholder`)) : input(`pp-f-${key}`, fVal))}</div>
+      <div class="person-person-io">${sentence(B.personName, A.personName, code === auth ? input(`pp-b-${key}`, bVal, t(`relation.basePlaceholder`)) : input(`pp-b-${key}`, bVal))}</div>
     </div>`
 		}).join(``)
 	}
