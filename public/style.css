@@ -804,6 +804,13 @@ input.invalid {
 	border-color: var(--node-border);
 }
 
+/* 只读输入（标题只读弹窗的本名展示）：灰底明确表示不可编辑 */
+.person-person-io input:disabled {
+	background: #f5f7fa;
+	color: #8a93a6;
+	cursor: not-allowed;
+}
+
 /* 关系表单多语言模式：按语言分组（fallback 组 + 各语言组），组间细分隔线，组名小字 */
 .pp-lang-group {
 	border-top: 1px solid #eef1f6;

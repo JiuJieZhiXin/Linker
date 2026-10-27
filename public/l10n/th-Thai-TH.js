@@ -12,7 +12,7 @@ export default {
 	[`settings.close`]: `ปิด`,
 	[`settings.advanced`]: `การป้อนข้อความ`,
 	[`settings.advancedUi`]: `แสดงเฉพาะภาษาของหน้าจอ`,
-	[`settings.advanced1`]: `แสดงภาษาอ้างอิงหลักเมื่อแตกต่างจากภาษาของหน้าจอ`,
+	[`settings.advanced1`]: `แสดงภาษาอ้างอิงหลักและห่วงโซ่สำรอง`,
 	[`settings.advanced2`]: `แสดงทุกภาษา`,
 
 	[`lang.title`]: `ภาษา`,

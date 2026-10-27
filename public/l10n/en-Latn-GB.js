@@ -12,7 +12,7 @@ export default {
 	[`settings.close`]: `Close`,
 	[`settings.advanced`]: `Text Entry`,
 	[`settings.advancedUi`]: `Show the interface language only`,
-	[`settings.advanced1`]: `Show the authoritative language when it differs from the interface language`,
+	[`settings.advanced1`]: `Show the authoritative language and fallback languages`,
 	[`settings.advanced2`]: `Show all languages`,
 
 	[`lang.title`]: `Language`,

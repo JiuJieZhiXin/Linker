@@ -13,7 +13,7 @@ export default {
 	[`settings.close`]: `إغلاق`,
 	[`settings.advanced`]: `إدخال النص`,
 	[`settings.advancedUi`]: `إظهار لغة الواجهة فقط`,
-	[`settings.advanced1`]: `إظهار اللغة المرجعية عند اختلافها عن لغة الواجهة`,
+	[`settings.advanced1`]: `إظهار اللغة المرجعية ولغات سلسلة الاحتياط`,
 	[`settings.advanced2`]: `عرض كل اللغات`,
 
 	[`lang.title`]: `اللغة`,

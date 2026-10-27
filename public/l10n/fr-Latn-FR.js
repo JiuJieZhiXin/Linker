@@ -12,7 +12,7 @@ export default {
 	[`settings.close`]: `Fermer`,
 	[`settings.advanced`]: `Saisie de texte`,
 	[`settings.advancedUi`]: `Afficher uniquement la langue de l'interface`,
-	[`settings.advanced1`]: `Afficher la langue de référence lorsqu'elle diffère de la langue de l'interface`,
+	[`settings.advanced1`]: `Afficher la langue de référence et les langues de repli`,
 	[`settings.advanced2`]: `Afficher toutes les langues`,
 
 	[`lang.title`]: `Langue`,

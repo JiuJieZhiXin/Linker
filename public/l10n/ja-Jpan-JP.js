@@ -12,7 +12,7 @@ export default {
 	[`settings.close`]: `閉じる`,
 	[`settings.advanced`]: `テキスト入力`,
 	[`settings.advancedUi`]: `表示言語のみ表示`,
-	[`settings.advanced1`]: `作準言語と表示言語が異なる場合に作準言語を表示`,
+	[`settings.advanced1`]: `作準言語とフォールバック言語を表示`,
 	[`settings.advanced2`]: `全言語を表示`,
 
 	[`lang.title`]: `言語`,

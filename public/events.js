@@ -26,7 +26,7 @@ import {
 } from './html.js'
 import {initCollab} from './collab.js'
 import {initExportMenu} from './export.js'
-import {nameModalMode, chooseEntryMode} from './settings.js'
+import {nameModalMode, chooseEntryMode, entryMode} from './settings.js'
 import {applyStatic, availableLocales, getLocale, isRtl, onLocaleChange, t} from './i18n.js'
 
 const SVGNS = `http://www.w3.org/2000/svg`
@@ -1189,14 +1189,15 @@ document.addEventListener(`click`, e => {
 		return
 	}
 	// 左上角标题：单击改当前语言的显示名（纯本地化键；留空 = 清空当前语言槽、标题回退库名，不影响其他语言）
-	// 标题弹窗脱离录入开关管理：多语言形态只由 T2 决定（T1 无影响），无库名固定行——见 html.js isTitle
+	// 形态按状态表解析（controls.js openNameModal）：仅已启用语言可编辑；界面∉启用且选项1 = 只读本名
+	// mode 传原始录入选项（ui/dual/full），标题语义在 openNameModal 内换算（bare/full/readonly）
 	if (t.closest(`#app-title`)) {
 		const seg = location.pathname.split(`/`).filter(Boolean)
 		return openNameModal({
 			title: tr(`modal.renameTitle`),
 			placeholder: seg[0] || ``,
 			allowEmpty: true,
-			mode: nameModalMode(),
+			mode: entryMode(),
 			fixedAuth: seg[0] || null,
 			isTitle: true,
 			authValue: seg[0] || ``,

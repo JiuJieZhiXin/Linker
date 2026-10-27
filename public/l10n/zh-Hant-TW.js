@@ -13,7 +13,7 @@ export default {
 	[`settings.close`]: `關閉`,
 	[`settings.advanced`]: `文字輸入`,
 	[`settings.advancedUi`]: `僅展示介面語言`,
-	[`settings.advanced1`]: `如果作準語言與介面語言不同，顯示作準語言`,
+	[`settings.advanced1`]: `展示作準語言和回退語言`,
 	[`settings.advanced2`]: `顯示所有語言`,
 
 	[`lang.title`]: `語言`,

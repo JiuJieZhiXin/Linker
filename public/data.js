@@ -155,9 +155,9 @@ export async function putEnabledLangs(list) {
 	setEnabledLangsLocal(r && r.data ? String(r.data.value).split(`,`) : list)
 }
 
-// 元信息设置：本地立即生效（display_name 按语言槽解析），后台落库并广播同库客户端
+// 元信息设置：本地立即生效（display_name 走回退链解析），后台落库并广播同库客户端
 // patch = {value} | {l10n}；bg_color 只有 value/description（写 meta.value，空 = 删行）
-// display_name 是纯本地化键：value 写当前语言槽，l10n 逐槽；空值 = 清空对应槽（回退库名），不影响其他语言
+// display_name 是纯本地化键：value 写当前语言槽，l10n 逐槽；空值 = 清空对应槽（链尽回退库名），不影响其他语言
 export function setMetaOp(key, patch) {
 	const lang = getLocale()
 	if (key === `display_name`) {
@@ -169,7 +169,7 @@ export function setMetaOp(key, patch) {
 				else delete L[k]
 			}
 		}
-		store.meta.displayName = L[lang] || null
+		store.meta.displayName = resolveTitleName(L)
 	} else if (key === `bg_color`) {
 		const v = patch.description !== undefined ? patch.description : patch.value
 		store.meta.bgColor = v || null
@@ -270,13 +270,51 @@ const LANG_FALLBACK = {'zh-Hant-HK': [`zh-Hant-TW`, `zh-Hans-CN`], 'zh-Hant-TW':
 
 // 显示名解析：界面语言槽 → 本语回退列表（按序，仅取已启用语言的非空槽）→ 作准语言槽（后端保证非空）；空槽返回空串由调用方兜底
 export function resolveNameFor(lang, l10n) {
-	if (!l10n) return ``
+	const v = resolveViaChain(lang, l10n)
+	return v !== undefined ? v : (l10n && l10n[authLang]) || ``
+}
+
+// 回退链本体：界面语言槽 → 本语回退列表（按序，仅取已启用语言的非空槽）；未命中返回 undefined——resolveNameFor 续作准槽，resolveTitleName / 标题弹窗 placeholder 续 null（applyMeta / libVal 兜底库名）
+export function resolveViaChain(lang, l10n) {
+	if (!l10n) return undefined
 	if (l10n[lang]) return l10n[lang]
 	const enabled = new Set(getEnabledLangs())
 	for (const fb of LANG_FALLBACK[lang] || []) {
 		if (enabled.has(fb) && l10n[fb]) return l10n[fb]
 	}
-	return l10n[authLang] || ``
+	return undefined
+}
+
+// 某语言的回退链语言清单（含自身、按链序、仅已启用）——标题弹窗选项2（chain 形态）用：链长>1 出带标签多行，=1 退化单输入
+export function fallbackChainLangs(lang) {
+	const enabled = new Set(getEnabledLangs())
+	return [lang, ...(LANG_FALLBACK[lang] || [])].filter(c => enabled.has(c))
+}
+
+// 弹窗语言行集（有序语言码）——名称/关系/标题弹窗共用的唯一行集真源，渲染层只管按行画画
+//  bare=[界面语言]（无标签单输入）；auth=[作准]；fill=作准+界面；dual=作准+界面+界面语言的其他启用回退链语言（选项2）；
+//  chain=界面语言的回退链（标题选项2）；full=全部已启用（实体作准恒首位，标题界面语言首位）
+//  实体行集过滤未启用语言（bare 契约要求界面∈启用，不过滤）；形态由调用方先行换算（settings.nameModalMode / controls.openNameModal）
+export function modalRowSet(isTitle, mode) {
+	const lang = getLocale(), auth = getAuthLang()
+	const enabled = getEnabledLangs()
+	const en = new Set(enabled)
+	const ok = codes => [...new Set(codes)].filter(c => en.has(c))
+	switch (mode) {
+	case `bare`: return [lang]
+	case `auth`: return [auth]
+	case `fill`: return ok([auth, lang])
+	case `dual`: return isTitle ? fallbackChainLangs(lang) : ok([auth, lang, ...fallbackChainLangs(lang)])
+	case `chain`: return fallbackChainLangs(lang)
+	case `full`: return isTitle ? ok([lang, ...enabled]) : ok([auth, lang, ...enabled])
+	default: return null
+	}
+}
+
+// 标题显示名解析：与名称同一条回退链，但标题无作准概念——链尽仍空返回 null，由 applyMeta 兜底库名
+function resolveTitleName(l10n) {
+	const v = resolveViaChain(getLocale(), l10n)
+	return v === undefined ? null : v
 }
 
 const currentName = entity => resolveNameFor(getLocale(), entity.l10n)
@@ -395,9 +433,9 @@ export function reresolveAll() {
 	store.personPersons.forEach(resolvePpNames)
 }
 
-// 元信息显示名按当前语言重解析（reresolveAll / remoteMeta 共用）：空槽回退 null，applyMeta 兜底库名
+// 元信息显示名按当前语言重解析（reresolveAll / remoteMeta 共用）：与名称同链回退（界面槽 → 本语回退列表∩启用集），链尽回退 null，applyMeta 兜底库名
 function mergeL10nMetaOnly() {
-	store.meta.displayName = (store.meta.displayNameL10n && store.meta.displayNameL10n[getLocale()]) || null
+	store.meta.displayName = resolveTitleName(store.meta.displayNameL10n)
 }
 
 // 名称 patch 的本地镜像（与 server/db 统一规则对齐）：
@@ -1318,7 +1356,7 @@ function remoteMeta(msg) {
 				if (v) L[k] = v
 				else delete L[k]
 			}
-			store.meta.displayName = L[getLocale()] || null
+			store.meta.displayName = resolveTitleName(L)
 		}
 	} else if (msg.key === `bg_color`) {
 		store.meta.bgColor = msg.value

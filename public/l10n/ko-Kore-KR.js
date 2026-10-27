@@ -12,7 +12,7 @@ export default {
 	[`settings.close`]: `닫기`,
 	[`settings.advanced`]: `텍스트 입력`,
 	[`settings.advancedUi`]: `화면 언어만 표시`,
-	[`settings.advanced1`]: `기준 언어와 화면 언어가 다르면 기준 언어 표시`,
+	[`settings.advanced1`]: `기준 언어와 폴백 체인 언어 표시`,
 	[`settings.advanced2`]: `모든 언어 표시`,
 
 	[`lang.title`]: `언어`,

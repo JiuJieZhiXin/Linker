@@ -98,7 +98,7 @@ Trois concepts linguistiques, chacun avec son rôle :
 
 **Règle de comblement des vides** : après un changement de langue de référence, les anciens enregistrements n'ont momentanément pas de nom dans la nouvelle langue de référence (affichage replié sur l'ancienne valeur de référence), la prochaine édition de l'enregistrement doit compléter sur-le-champ la valeur de référence avant que la sauvegarde soit autorisée.
 
-La forme d'affichage du formulaire de nom (champ unique / référence + courante / toutes les langues activées) est décidée par l'interrupteur « saisie de texte » côté front-end et n'affecte pas les interfaces d'écriture — le contrat des interfaces se trouve dans la [documentation de l'API](../api/fr-Latn-FR.md).
+La forme d'affichage du formulaire de nom (champ unique / référence + courante + langues de la chaîne de repli / toutes les langues activées) est décidée par l'interrupteur « saisie de texte » à trois options côté front-end et n'affecte pas les interfaces d'écriture — le contrat des interfaces se trouve dans la [documentation de l'API](../api/fr-Latn-FR.md).
 
 ## Mécanismes de collaboration
 
@@ -121,19 +121,30 @@ Les termes d'interface sont cherchés via `i18n.js` (en cas de terme manquant, l
 
 ## Détails des formulaires et de l'export
 
-- **Forme du formulaire de nom** : la ligne courante de bare/dual exige que la langue d'interface soit dans l'ensemble des langues activées ; sinon toutes les formes se ramènent à une « saisie unique référentielle étiquetée » ; par ailleurs décidée par l'interrupteur « saisie de texte » à trois options — bare (champ unique) / dual (référence + courante) / full (toutes les langues activées) ; la ligne de référence est toujours en première position, en gras, obligatoire et non effaçable ; la création et l'édition dont le slot de référence est vide forcent l'affichage de la ligne de référence
+- **Forme du formulaire de nom** : la forme est décidée par l'interrupteur « saisie de texte » à trois options — bare (champ unique) / dual (référence + courante + langues de la chaîne de repli, option 2 « Afficher la langue de référence et les langues de repli ») / full (toutes les langues activées) ; la ligne de référence est toujours en première position, en gras, obligatoire et non effaçable ; la création et l'édition dont le slot de référence est vide forcent l'affichage de la ligne de référence selon les règles de fill (voir les notes après le tableau). bare/fill exigent que la langue d'interface soit dans l'ensemble des langues activées ; sinon elles se ramènent à une « saisie unique référentielle étiquetée » ; dual fait exception — la forme reste valable quand la langue d'interface ∉ l'ensemble des langues activées mais qu'il existe une langue activée de la chaîne de repli (lignes = référence + langues de la chaîne, édition multilingue non standard, voir le tableau)
 
 | Langue d'interface | Langues activées | Langue de référence | Slot de référence vide | Option 1 | Option 2 | Option 3 | Scénario |
 |---|---|---|---|---|---|---|---|
-| A | contient A | A | oui | A, sans étiquette | A, sans étiquette | Toutes, avec étiquette | Création normale |
-| A | contient A | A | non | A, sans étiquette | A, sans étiquette | Toutes, avec étiquette | Édition normale |
-| A | contient A | B | oui | B et A, avec étiquette | B et A, avec étiquette | Toutes, avec étiquette | Création multilingue ou édition en période de comblement des vides |
-| A | contient A | B | non | A, sans étiquette | B et A, avec étiquette | Toutes, avec étiquette | Édition multilingue |
-| A | ne contient pas A | B | oui | B, avec étiquette | B, avec étiquette | Toutes, avec étiquette | Création non standard |
-| A | ne contient pas A | B | non | B, avec étiquette | B, avec étiquette | Toutes, avec étiquette | Édition non standard |
+| A | contient A | A | oui | A, sans étiquette | A (+ langues de la chaîne de repli de A), sans étiquette s'il n'y a que A | Toutes, avec étiquette | Création normale |
+| A | contient A | A | non | A, sans étiquette | A (+ langues de la chaîne de repli de A), sans étiquette s'il n'y a que A | Toutes, avec étiquette | Édition normale |
+| A | contient A | B | oui | B et A, avec étiquette | référence, A et les langues de la chaîne de repli de A, avec étiquette | Toutes, avec étiquette | Création multilingue ou édition en période de comblement des vides |
+| A | contient A | B | non | A, sans étiquette | référence, A et les langues de la chaîne de repli de A, avec étiquette | Toutes, avec étiquette | Édition multilingue |
+| A | ne contient pas A | B | oui | B, avec étiquette | référence (+ langues de la chaîne de repli de A), avec étiquette | Toutes, avec étiquette | Création non standard |
+| A | ne contient pas A | B | non | B, avec étiquette | référence (+ langues de la chaîne de repli de A), avec étiquette | Toutes, avec étiquette | Édition non standard |
+
+Langues de la chaîne de repli = liste de repli propre à la langue ∩ langues activées (`LANG_FALLBACK`, voir [Modèle de données multilingue](#modèle-de-données-multilingue)) ; ordre des lignes : la référence toujours en première position, puis la langue courante, puis l'ordre de la chaîne. La soumission en dual suit les mêmes règles qu'en full (on replie les lignes rendues, chaîne vide = effacement du slot).
+Forme de comblement des vides fill : forcée quand le slot de référence est vide + référence ≠ interface + option 2 non choisie (toujours déclenchée à la création) — seules les deux lignes référence + courante, sans langues de la chaîne ; quand référence = interface, le champ unique bare suffit pour compléter le slot de référence (côté serveur, value retombe par défaut sur authoritative), sans forcer de lignes multiples.
 
 Implémentation : voir settings.js nameModalMode
-- **Pop-up de titre** (nom d'affichage de la base) : non soumis à l'interrupteur de saisie de texte, sans notion de référence ni de gras ; en affichage multilingue la langue courante vient en premier, toute langue laissée vide retombe sur le nom de la base, le placeholder du champ est la valeur du nom de la base ; la soumission n'écrit pas authoritative
+- **Pop-up de titre** (nom d'affichage de la base) : sans notion de référence ni de gras ; seules les langues activées sont éditables (les langues non activées n'apparaissent pas dans les champs) ; l'affichage du titre suit la même chaîne de repli que les noms (slot de l'interface → liste de repli propre à la langue ∩ langues activées), si la chaîne est épuisée sans résultat on retombe sur le nom de la base ; la soumission n'écrit pas authoritative. Les formes sont récapitulées dans le tableau ci-dessous (« Toutes » = toutes les langues activées) :
+
+| Langue d'interface | Langues activées | Option 1 | Option 2 | Option 3 |
+|---|---|---|---|---|
+| A | contient A | A, sans étiquette | A + les langues de la chaîne de repli de toutes les langues activées, avec étiquette s'il y en a plusieurs, sans étiquette s'il n'y a que A | Toutes, avec étiquette |
+| A | ne contient pas A | nom de la base en lecture seule (non modifiable) | les langues de la chaîne de repli de toutes les langues activées, avec étiquette ; s'il n'y en a aucune, nom de la base en lecture seule | Toutes, avec étiquette |
+
+  Ordre des lignes : en option 3, la langue courante (lorsqu'elle est activée) est toujours en première position, les autres suivent l'ordre d'activation (la référence y est toujours en première position) ; quand la langue d'interface n'est pas activée, tout suit l'ordre d'activation ; en option 2, l'ordre est celui de la chaîne de repli (A en premier) ; placeholder = titre qui s'afficherait si ce slot était vide (chaîne épuisée → retombe sur le nom de la base)
+- **Règle de ligne unique** (commune aux formulaires de nom, de titre et de relation) : quand le rendu d'une forme multilingue ne laisse plus qu'une ligne / un groupe, qui est précisément la langue courante de l'interface (référence = interface et base à langue unique où seule la langue de référence est activée), on retire l'étiquette — visuellement identique à la saisie unique, mais la sémantique de soumission reste celle de la forme d'origine
 - **Retour de validation de saisie** : un champ obligatoire vide → cadre rouge sur le champ correspondant + focus automatique, une notification légère flotte en bas de l'écran puis disparaît automatiquement, sans refus silencieux
 - **Nom de fichier d'export** (PNG/SVG) : `Marque_Affichage_Horodatage.ext`, le nom de marque suit la langue de l'interface ; l'export de la vue « Actuelle » ajoute le nom de l'organisation
 - **Mobile** : champs de saisie ≥ 16px, contre le zoom de focus iOS

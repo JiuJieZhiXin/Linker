@@ -98,7 +98,7 @@ Three language concepts, each with its own job:
 
 **Gap-filling rule**: after switching the authoritative language, old records temporarily have no name in the new authoritative language (display falls back to the old authoritative value); the next edit of such a record must fill the authoritative value back in on the spot before it can be saved.
 
-The form's display shape (single input / authoritative + current / all enabled languages) is decided by the frontend "text entry" switch and does not affect the write endpoints — the interface contract is in the [api documentation](../api/en-Latn-US.md).
+The form's display shape (single input / authoritative + current + fallback-chain languages / all enabled languages) is decided by the frontend "text entry" three-way switch and does not affect the write endpoints — the interface contract is in the [api documentation](../api/en-Latn-US.md).
 
 ## Collaboration
 
@@ -121,19 +121,30 @@ UI strings are looked up via `i18n.js` (a missing entry displays the key itself)
 
 ## Form & Export Details
 
-- **Name form shapes**: the current row of bare/dual requires the UI language to be in the enabled set; when it is not, every shape collapses to a "labeled authoritative single input"; the shape is otherwise decided by the three-way "text entry" switch — bare (single input) / dual (authoritative + current) / full (all enabled languages); the authoritative row is always first, bolded, required, and cannot be cleared; creating a record — and editing one whose authoritative slot is empty — forces the authoritative row to show
+- **Name form shapes**: the shape is decided by the three-way "text entry" switch — bare (single input) / dual (authoritative + current + fallback-chain languages, option 2 "Show the authoritative language and fallback-chain languages") / full (all enabled languages); the authoritative row is always first, bolded, required, and cannot be cleared; editing a record whose authoritative slot is empty — and creating one — forces the authoritative row to show per the fill rules (see the notes below the table). bare/fill require the UI language to be in the enabled set; when it is not, they collapse to a "labeled authoritative single input"; dual is the exception — it still holds when the UI language ∉ the enabled set but an enabled fallback-chain language exists (row set = authoritative + chain languages, a non-standard multilingual edit, see the table)
 
 | UI language | Enabled languages | Authoritative language | Authoritative slot empty | Option 1 | Option 2 | Option 3 | Scenario |
 |---|---|---|---|---|---|---|---|
-| A | includes A | A | Yes | A, unlabeled | A, unlabeled | All, labeled | Normal create |
-| A | includes A | A | No | A, unlabeled | A, unlabeled | All, labeled | Normal edit |
-| A | includes A | B | Yes | B and A, labeled | B and A, labeled | All, labeled | Multilingual create or gap-filling edit |
-| A | includes A | B | No | A, unlabeled | B and A, labeled | All, labeled | Multilingual edit |
-| A | excludes A | B | Yes | B, labeled | B, labeled | All, labeled | Non-standard create |
-| A | excludes A | B | No | B, labeled | B, labeled | All, labeled | Non-standard edit |
+| A | includes A | A | Yes | A, unlabeled | A (+A's fallback-chain languages), unlabeled when only A | All, labeled | Normal create |
+| A | includes A | A | No | A, unlabeled | A (+A's fallback-chain languages), unlabeled when only A | All, labeled | Normal edit |
+| A | includes A | B | Yes | B and A, labeled | authoritative, A, and A's fallback-chain languages, labeled | All, labeled | Multilingual create or gap-filling edit |
+| A | includes A | B | No | A, unlabeled | authoritative, A, and A's fallback-chain languages, labeled | All, labeled | Multilingual edit |
+| A | excludes A | B | Yes | B, labeled | authoritative (+A's fallback-chain languages), labeled | All, labeled | Non-standard create |
+| A | excludes A | B | No | B, labeled | authoritative (+A's fallback-chain languages), labeled | All, labeled | Non-standard edit |
+
+Fallback-chain languages = the per-language fallback list ∩ the enabled set (`LANG_FALLBACK`, see [Multilingual Data Model](#multilingual-data-model)); row order: authoritative always first, then the current language, then in chain order. dual submits under the same rules as full (collapse the rendered rows; an empty string clears a slot).
+Gap-filling shape fill: forced when the authoritative slot is empty + authoritative ≠ UI language + option 2 is not selected (always triggered on create) — only the authoritative + current rows, without chain languages; when authoritative = UI, the bare single input alone can fill the authoritative slot back in (on the server side `value` defaults back to `authoritative`), and multiple rows are not forced.
 
 Implementation: settings.js nameModalMode
-- **Title dialog** (database display name): unaffected by the text-entry switch, with no authoritative concept and no bolded row; in multilingual display the current language comes first, any language left empty falls back to the database name, and the input placeholder is the database-name value; submission does not write authoritative
+- **Title dialog** (database display name): no authoritative concept, so no bolded row; only enabled languages are editable (languages not in the enabled set do not appear in the dialog); title display falls back through the same chain as names (UI-language slot → per-language fallback list ∩ enabled set), falling back to the database name when the chain is exhausted; submission does not write authoritative. Shapes are shown in the table below ("all" = all enabled languages):
+
+| UI language | Enabled languages | Option 1 | Option 2 | Option 3 |
+|---|---|---|---|---|
+| A | includes A | A, unlabeled | A + the fallback-chain languages of all enabled languages, labeled if multiple, unlabeled if only A | All, labeled |
+| A | excludes A | read-only own name (not editable) | the fallback-chain languages of all enabled languages, labeled; the read-only database name if there are none | All, labeled |
+
+  Row order: for option 3, the current language (when in the enabled set) is always first and the rest follow the enabled order (authoritative always first); when the UI language is not in the enabled set, everything follows the enabled order; option 2 follows fallback-chain order (A first); placeholder = the title display assuming this slot is empty (the database name as the chain-exhausted fallback)
+- **Unique-row rule** (common to the name / title / relationship forms): when a multilingual shape renders down to a single row/group and that row is exactly the current UI language (authoritative = UI and the database has only the authoritative language enabled), the label is dropped — visually the same as the single input, but the submission semantics remain those of the original shape
 - **Entry validation feedback**: a required field left empty → red outline on the corresponding input + auto-focus, plus a light toast that floats up at the bottom and auto-dismisses — never a silent rejection
 - **Export file names** (PNG/SVG): `brand_display-name_timestamp.ext`, with the brand name following the UI language; "Current"-view exports append the organization name
 - **Mobile**: inputs ≥16px to prevent iOS focus zoom
