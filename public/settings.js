@@ -3,7 +3,7 @@
 // 存 localStorage（全局，跨库互通），只决定前端发什么请求体，后端按请求体 key 分流存储；
 // 模式的呈现收在语言弹窗底部（html.js 的 languageModalHtml），切换后由 chooseEntryMode 原地重刷语言弹窗
 import {getLocale, onLocaleChange} from './i18n.js'
-import {getAuthLang, setLangMetaHook} from './data.js'
+import {getAuthLang, getEnabledLangs, setLangMetaHook} from './data.js'
 import {refreshLanguageModal, refreshEnabledLayer} from './controls.js'
 
 // 远端作准/启用语言变更且弹窗正开着：语言弹窗原地重刷勾选态；叠层勾选页也按最新状态重排
@@ -46,13 +46,17 @@ export function chooseEntryMode(m) {
 	refreshLanguageModal()
 }
 
-// 名称/关系弹窗形态（形态表见 README「文本录入」）：full → full；作准≠界面 且（dual / 作准槽空）→ dual；其余 → bare
+// 名称/关系弹窗形态（逻辑表：界面语言∈启用集决定单输入/双输入的当前行是否存在）：full → full；作准≠界面 且（dual / 作准槽空）→ dual；其余 → bare 或 auth
+//   bare 契约 = 单输入即界面语言槽；dual 的当前行 = 界面语言槽——两者都要求界面语言在启用集内，
+//   不在则退化为带标签的作准单输入（auth）：唯一可录且必填的槽就是作准槽
 //   authEmpty = 记录作准槽为空：新建必空（作准值必须当场显式录入）；编辑仅出现于切换作准语言后未回填的填坑场景——
 //   三者同一规则：作准槽空 + 作准≠界面 → 强制 dual 显示作准行（与所选模式无关），作准值当场补回后才允许保存
 //   dual 形态由此保证 作准≠界面；标题弹窗不受模式 1 影响，多语言形态只由 full 决定（见 html.js isTitle）
 export const nameModalMode = (authEmpty = false) => readMode() === `full`
 	? `full`
-	: ((readMode() === `dual` || authEmpty) && getAuthLang() !== getLocale() ? `dual` : `bare`)
+	: (getEnabledLangs().includes(getLocale())
+		? ((readMode() === `dual` || authEmpty) && getAuthLang() !== getLocale() ? `dual` : `bare`)
+		: `auth`)
 
 // 界面语言切换后：语言弹窗若开着，标签与勾选态跟随新语言
 onLocaleChange(() => {

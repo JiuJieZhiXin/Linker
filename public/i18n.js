@@ -3,18 +3,20 @@
 // 当前语言缺词条时直接显示 key 本身（不回退其他语言——缺译要一眼可见）。
 // 界面语言只进浏览器 localStorage（键不带库路径，各库互通），不进数据库；
 // 视图收拢状态等按库分键的持久化见 view.js，两者互不干扰。
-import zhCN from './l10n/zh-CN.js'
-import enUS from './l10n/en-US.js'
-import jaJP from './l10n/ja-JP.js'
-import arSA from './l10n/ar-SA.js'
-import zhTW from './l10n/zh-TW.js'
-import zhHK from './l10n/zh-HK.js'
-import frFR from './l10n/fr-FR.js'
-import koKR from './l10n/ko-KR.js'
+import zhCN from './l10n/zh-Hans-CN.js'
+import enUK from './l10n/en-Latn-GB.js'
+import enUS from './l10n/en-Latn-US.js'
+import jaJP from './l10n/ja-Jpan-JP.js'
+import arSA from './l10n/ar-Arab-SA.js'
+import zhTW from './l10n/zh-Hant-TW.js'
+import zhHK from './l10n/zh-Hant-HK.js'
+import frFR from './l10n/fr-Latn-FR.js'
+import koKR from './l10n/ko-Kore-KR.js'
+import thTH from './l10n/th-Thai-TH.js'
 
 const STORAGE_KEY = `linker:locale`
-const FALLBACK = `zh-CN`
-const RTL_LANGS = [`ar-SA`] // 从右向左书写的界面语言
+const FALLBACK = `zh-Hans-CN`
+const RTL_LANGS = [`ar-Arab-SA`] // 从右向左书写的界面语言
 
 const locales = new Map() // code -> {name, dict}
 let current = null
@@ -106,12 +108,14 @@ export function applyStatic(root = document) {
 	})
 }
 
-registerLocale(`zh-CN`, `简体中文`, zhCN)
-registerLocale(`zh-TW`, `臺灣繁體中文`, zhTW)
-registerLocale(`zh-HK`, `香港繁體中文`, zhHK)
-registerLocale(`en-US`, `American English`, enUS)
-registerLocale(`ja-JP`, `日本語`, jaJP)
-registerLocale(`ko-KR`, `조선글`, koKR)
-registerLocale(`fr-FR`, `Français`, frFR)
-registerLocale(`ar-SA`, `العربية`, arSA)
+registerLocale(`zh-Hans-CN`, `简体中文`, zhCN)
+registerLocale(`zh-Hant-TW`, `臺灣繁體中文`, zhTW)
+registerLocale(`zh-Hant-HK`, `香港繁體中文`, zhHK)
+registerLocale(`en-Latn-GB`, `British English`, enUK)
+registerLocale(`en-Latn-US`, `American English`, enUS)
+registerLocale(`ja-Jpan-JP`, `日本語`, jaJP)
+registerLocale(`ko-Kore-KR`, `조선글`, koKR)
+registerLocale(`th-Thai-TH`, `อักษรไทย`, thTH)
+registerLocale(`fr-Latn-FR`, `Français`, frFR)
+registerLocale(`ar-Arab-SA`, `العربية`, arSA)
 loadInitialLocale()

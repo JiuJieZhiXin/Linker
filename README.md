@@ -1,12 +1,12 @@
 # 连客
 
-[![版本](https://img.shields.io/badge/version-0.1.0-brightgreen)](https://github.com/JiuJieZhiXin/Linker)
+[![版本](https://img.shields.io/badge/version-0.2.0-brightgreen)](https://github.com/JiuJieZhiXin/Linker)
 [![协议](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22.13-339933)](package.json)
 [![依赖](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
-[![多语言](https://img.shields.io/badge/i18n-zh--CN%20%C2%B7%20zh--TW%20%C2%B7%20zh--HK%20%C2%B7%20en--US%20%C2%B7%20ja--JP%20%C2%B7%20ko--KR%20%C2%B7%20fr--FR%20%C2%B7%20ar--SA-orange)](public/l10n/)
+[![多语言](https://img.shields.io/badge/i18n-10-orange)](public/l10n/)
 
-**简体中文** · [臺灣繁體中文](README.zh-TW.md) · [香港繁體中文](README.zh-HK.md) · [American English](README.en-US.md) · [日本語](README.ja-JP.md) · [조선글](README.ko-KR.md) · [Français](README.fr-FR.md) · [العربية](README.ar-SA.md)
+**简体中文** · [臺灣繁體中文](README.zh-Hant-TW.md) · [香港繁體中文](README.zh-Hant-HK.md) · [British English](README.en-Latn-GB.md) · [American English](README.en-Latn-US.md) · [日本語](README.ja-Jpan-JP.md) · [조선글](README.ko-Kore-KR.md) · [อักษรไทย](README.th-Thai-TH.md) · [Français](README.fr-Latn-FR.md) · [العربية](README.ar-Arab-SA.md)
 
 组织 · 身份 · 人物 · 关系图谱工具：谁在什么组织担任什么身份、彼此是什么关系，一图理清。
 
@@ -20,7 +20,7 @@
 
 ### 多语言
 
-- **界面语言**：界面支持八种语言切换
+- **界面语言**：界面支持十种语言切换
 - **作准语言**：每个库的名称基准语言，没翻译的名称回退显示作准值
 - **启用语言**：名称能录哪几种语言可配置
 
@@ -46,8 +46,8 @@ node server.js          # 可选 --port / --host
 
 ## 文档
 
-- [docs/architecture/zh-CN.md](docs/architecture/zh-CN.md)：技术架构、数据多语言存储、目录结构、错误约定
-- [docs/api/zh-CN.md](docs/api/zh-CN.md)：REST API 与协作广播（WebSocket）接口文档
+- [docs/architecture/zh-Hans-CN.md](docs/architecture/zh-Hans-CN.md)：技术架构、数据多语言存储、目录结构、错误约定
+- [docs/api/zh-Hans-CN.md](docs/api/zh-Hans-CN.md)：REST API 与协作广播（WebSocket）接口文档
 
 ## 开源协议
 

@@ -748,13 +748,36 @@ input.invalid {
 	font-weight: 600;
 }
 
-/* 高级模式录入行的语言/描述标签 */
+/* 高级模式录入行的语言标签：仅名称弹窗（.io-rows 网格）使用——列宽由网格 max-content 轨道决定，无需 min-width */
 .person-person-io .io-label {
-	min-width: 6em;
 	text-align: right;
 	color: #8a94a6;
 	font-size: 12px;
-	flex-shrink: 0;
+}
+
+/* 名称弹窗录入行：共享两列网格——标签列宽 = 本弹窗最长标签（max-content），标签拉伸铺满列宽并右对齐、
+   单行不换行，输入框逐行对齐；列宽随界面语言的标签长度自适应（American English 类长名不再撑开弹窗），无需按语言调参 */
+.io-rows {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	column-gap: 8px;
+	row-gap: 12px;
+	align-items: center;
+	margin-bottom: 12px;
+}
+
+.io-rows .person-person-io {
+	display: contents; /* 行的两个孩子（标签/输入）直接参与父级网格 */
+}
+
+.io-rows .person-person-io > :first-child {
+	white-space: nowrap;
+}
+
+/* bare 单输入行（无标签）：通栏居中 */
+.io-rows .person-person-io > :only-child {
+	grid-column: 1 / -1;
+	justify-self: center;
 }
 
 /* 多同名引用选人：复用人物卡片样式，行内点击 = 指针光标（侧栏里是 grab 拖拽） */

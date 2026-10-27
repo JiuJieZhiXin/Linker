@@ -9,11 +9,11 @@
 // 由 applyRemote 把远端变更落到本地缓存——只轻量重绘，不动缩放/聚焦等视图状态。
 //
 // 错误约定：后端只回错误代码（{error: code}），文本由前端 l10n 维护（error.* 词条），见 apiError()
-// 数据多语言：名称只存 l10n 附表的语言槽（locale 键槽表）；.name = 按界面语言解析、缺槽回退作准语言槽的显示名
+// 数据多语言：名称只存 l10n 附表的语言槽（locale 键槽表）；.name = 界面语言槽 → 本语回退列表（仅启用语言）→ 作准语言槽的显示名
 import {availableLocales, getLocale, t} from './i18n.js'
 
-// l10n 附表的列名集（zh_CN/ar_SA …），随注册语言自动扩展
-const L10N_COLS = availableLocales().map(x => x.code.replace(`-`, `_`))
+// l10n 附表的列名集（zh_Hans_CN/ar_Arab_SA …），随注册语言自动扩展
+const L10N_COLS = availableLocales().map(x => x.code.replace(/-/g, `_`))
 
 const domKeyReg = new WeakMap() // tempKey(Symbol) -> dom 用字符串
 const byDom = new Map()         // dom 字符串 -> 条目（HTML5 dataTransfer 只能传字符串，反向查找用）
@@ -99,7 +99,7 @@ function touchPerson(p) {
 export const newPerson = {dom: null}
 
 // ---- 作准语言（库级配置；loadAll 从 meta.authoritativeLang 写入；远端 meta 广播 / 语言弹窗 PUT 成功后更新）----
-let authLang = `zh-CN`
+let authLang = `zh-Hans-CN`
 export const getAuthLang = () => authLang
 
 // 切换作准语言：回退链随作准槽变化，全量重解析所有实体 .name 并轻量重绘（与界面语言切换同一呈现路径）；
@@ -128,6 +128,8 @@ let enabledLangs = null // null = 未加载（随 loadAll 写入）
 export const getEnabledLangs = () => enabledLangs || [authLang]
 
 // 本地更新（loadAll / 远端 meta 广播 / 乐观更新共用）：过滤非法码、保序去重，作准语言恒归一到首位
+// 回退链依赖启用集：数据就绪后（store.persons 非空）全量重解析显示名——切启用后实际显示值可能变化；
+// loadAll 首次调用时 store 尚空，解析由随后的 mergeL10n 统一完成，此处只更新列表
 export function setEnabledLangsLocal(list) {
 	const auth = getAuthLang()
 	const set = [...new Set((list || []).filter(c => availableLocales().some(x => x.code === c)))]
@@ -137,6 +139,10 @@ export function setEnabledLangsLocal(list) {
 		set.unshift(auth)
 	} else if (i < 0) set.unshift(auth)
 	enabledLangs = set
+	if (store.persons.length) {
+		reresolveAll()
+		notify(false) // 轻量重绘：回退链结果已变，同 setAuthLang 先例
+	}
 }
 
 // 启用语言切换（语言弹窗）：PUT meta 落库并广播；成功本地生效，失败抛错（调用方 toast 错误码）
@@ -233,8 +239,8 @@ export function resolveKey(key) {
 // ---- 通信 ----
 // 请求统一带 X-Lang（当前界面语言：value 槽的写入目标，服务端缺省/非法回退默认语言）与 X-Client-Id（协作回环排除）
 
-// l10n 附表行（列名 zh_CN/en_US/ja_JP）→ locale 键槽表
-const colToLocale = c => c.replace(`_`, `-`)
+// l10n 附表行（列名 zh_Hans_CN/en_Latn_US/ja_Jpan_JP）→ locale 键槽表
+const colToLocale = c => c.replace(/_/g, `-`)
 
 function rowsToL10n(rows) {
 	const m = {}
@@ -259,9 +265,18 @@ function rowsToPpL10n(rows) {
 	return m
 }
 
-// 显示名解析：界面语言槽 → 作准语言槽（后端保证非空）；空槽返回空串由调用方兜底
+// 本语回退表：界面槽为空时按序改试这些语言的槽（zh 三变体互备；en-Latn-US/en-Latn-GB 互备）；未列出的语言无回退，直落作准槽
+const LANG_FALLBACK = {'zh-Hant-HK': [`zh-Hant-TW`, `zh-Hans-CN`], 'zh-Hant-TW': [`zh-Hant-HK`, `zh-Hans-CN`], 'zh-Hans-CN': [`zh-Hant-TW`, `zh-Hant-HK`], 'en-Latn-US': [`en-Latn-GB`], 'en-Latn-GB': [`en-Latn-US`]}
+
+// 显示名解析：界面语言槽 → 本语回退列表（按序，仅取已启用语言的非空槽）→ 作准语言槽（后端保证非空）；空槽返回空串由调用方兜底
 export function resolveNameFor(lang, l10n) {
-	return (l10n && l10n[lang]) || (l10n && l10n[authLang]) || ``
+	if (!l10n) return ``
+	if (l10n[lang]) return l10n[lang]
+	const enabled = new Set(getEnabledLangs())
+	for (const fb of LANG_FALLBACK[lang] || []) {
+		if (enabled.has(fb) && l10n[fb]) return l10n[fb]
+	}
+	return l10n[authLang] || ``
 }
 
 const currentName = entity => resolveNameFor(getLocale(), entity.l10n)
@@ -279,7 +294,7 @@ export function personByAuthName(name) {
 	return l.length ? l[0] : null
 }
 
-// 关系某方向的显示标签：当前语言槽 → 作准语言槽（双向标签只存 l10n 附表槽，主表已无 forward/backward 列）
+// 关系某方向的显示标签：当前语言槽 → 本语回退列表（仅启用语言）→ 作准语言槽（双向标签只存 l10n 附表槽，主表已无 forward/backward 列）
 export function ppLabel(personPerson, dir) {
 	return resolveNameFor(getLocale(), personPerson.l10n && personPerson.l10n[dir])
 }

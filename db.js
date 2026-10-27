@@ -1,6 +1,6 @@
 // db.js — SQLite 数据层（多库：data/ 下每个 .db 一个库，按名字懒加载并缓存连接）
 // 数据多语言：主表无 description 列；名称一律存 <表>_l10n 附表按语言槽（空 = 未翻译，显示回退作准语言槽）。
-// 每个库的 meta.authoritative_lang = 作准语言（创建库时按创建者界面语言刷入；存量库迁移一律定为 zh-CN）：
+// 每个库的 meta.authoritative_lang = 作准语言（创建库时按创建者界面语言刷入；存量库迁移一律定为 zh-Hans-CN）：
 //   作准槽必须始终非空——新建必填；清空作准槽的写入一律拒绝；切换作准语言后新槽允许短暂为空，
 //   但下次编辑该记录时必须填入作准语言才允许保存（authoritative_required）。
 // 写约定（与 server.js/data.js 对齐）：patch = {authoritative?, value?, l10n?}
@@ -20,9 +20,9 @@ const NAME_RE = /^[\w-]+$/
 // 界面语言 ↔ l10n 附表列名（列名用下划线形式，SQL 里免引号）
 // 新增语言在此登记 + i18n.js registerLocale + l10n/<code>.js 词条即可全链路生效；
 // 附表缺列由 openDb 的 ensureL10nColumns 自动补（与 ensureSortColumn 同一先例）
-const LANGS = [`zh-CN`, `zh-TW`, `zh-HK`, `en-US`, `ja-JP`, `ko-KR`, `fr-FR`, `ar-SA`]
-const DEFAULT_LANG = `zh-CN`
-const langCol = lang => String(lang).replace(`-`, `_`)
+const LANGS = [`zh-Hans-CN`, `zh-Hant-TW`, `zh-Hant-HK`, `en-Latn-GB`, `en-Latn-US`, `ja-Jpan-JP`, `ko-Kore-KR`, `th-Thai-TH`, `fr-Latn-FR`, `ar-Arab-SA`]
+const DEFAULT_LANG = `zh-Hans-CN`
+const langCol = lang => String(lang).replace(/-/g, `_`)
 const LANG_COLS = LANGS.map(langCol)
 
 /** data/ 下现有的全部库名（不含 .db 扩展名） */
@@ -42,7 +42,7 @@ function createDb(name, lang = DEFAULT_LANG) {
 	const file = path.join(DATA_DIR, `${name}.db`)
 	if (dbCache.has(name) || fs.existsSync(file)) return `exists`
 	fs.writeFileSync(file, ``)
-	const api = openDb(name) // 打开即建表（含存量迁移，此时作准语言缺省 zh-CN）
+	const api = openDb(name) // 打开即建表（含存量迁移，此时作准语言缺省 zh-Hans-CN）
 	api.setAuthoritativeLang(LANGS.includes(lang) ? lang : DEFAULT_LANG)
 	return `created`
 }
@@ -114,19 +114,19 @@ function openDb(name) {
 	    CREATE TABLE IF NOT EXISTS organization_l10n
 	    (
 	        id    TEXT PRIMARY KEY REFERENCES organization (id),
-	        zh_CN TEXT, en_US TEXT, ja_JP TEXT
+	        zh_Hans_CN TEXT, en_Latn_US TEXT, ja_Jpan_JP TEXT
 	    );
 
 	    CREATE TABLE IF NOT EXISTS identity_l10n
 	    (
 	        id    TEXT PRIMARY KEY REFERENCES identity (id),
-	        zh_CN TEXT, en_US TEXT, ja_JP TEXT
+	        zh_Hans_CN TEXT, en_Latn_US TEXT, ja_Jpan_JP TEXT
 	    );
 
 	    CREATE TABLE IF NOT EXISTS person_l10n
 	    (
 	        id    TEXT PRIMARY KEY REFERENCES person (id),
-	        zh_CN TEXT, en_US TEXT, ja_JP TEXT
+	        zh_Hans_CN TEXT, en_Latn_US TEXT, ja_Jpan_JP TEXT
 	    );
 
 	    -- 关系双向标签的翻译：(id, type) 联合主键
@@ -134,7 +134,7 @@ function openDb(name) {
 	    (
 	        id    TEXT NOT NULL REFERENCES person_person (id),
 	        type  TEXT NOT NULL CHECK (type IN ('forward', 'backward')),
-	        zh_CN TEXT, en_US TEXT, ja_JP TEXT,
+	        zh_Hans_CN TEXT, en_Latn_US TEXT, ja_Jpan_JP TEXT,
 	        PRIMARY KEY (id, type)
 	    );
 
@@ -142,7 +142,7 @@ function openDb(name) {
 	    CREATE TABLE IF NOT EXISTS meta_l10n
 	    (
 	        id    TEXT PRIMARY KEY,
-	        zh_CN TEXT, en_US TEXT, ja_JP TEXT
+	        zh_Hans_CN TEXT, en_Latn_US TEXT, ja_Jpan_JP TEXT
 	    );
 	`)
 
@@ -182,7 +182,7 @@ function openDb(name) {
 		keys.forEach((k, i) => upd.run(i, k, parentId))
 	}
 
-	/** l10n 槽 upsert：vals = {zh_CN?: string|null}（null/'' = 清空该槽）；type 用于 person_person_l10n 的 (id, type) 键 */
+	/** l10n 槽 upsert：vals = {zh_Hans_CN?: string|null}（null/'' = 清空该槽）；type 用于 person_person_l10n 的 (id, type) 键 */
 	function upsertL10nRow(table, id, vals, type = null) {
 		const cols = Object.keys(vals).filter(c => LANG_COLS.includes(c))
 		if (!cols.length) return
@@ -359,7 +359,7 @@ function openDb(name) {
 		const l10n = {forward: {}, backward: {}}
 		for (const row of db.prepare(`SELECT type, ${cols} FROM person_person_l10n WHERE id = ?`).all(id)) {
 			const slots = {}
-			for (const col of LANG_COLS) if (row[col]) slots[col.replace(`_`, `-`)] = row[col]
+			for (const col of LANG_COLS) if (row[col]) slots[col.replace(/_/g, `-`)] = row[col]
 			l10n[row.type] = slots
 		}
 		return {...normalizePersonPerson(r), l10n}
@@ -787,11 +787,11 @@ function openDb(name) {
 	}
 
 	/** 元信息取值：不存在返回 null（调用方回退默认值）
-	 *  display_name 是纯本地化键（只存 meta_l10n 槽，meta 本表不存）：为兼容读取，回退到 zh_CN 槽 */
+	 *  display_name 是纯本地化键（只存 meta_l10n 槽，meta 本表不存）：为兼容读取，回退到 zh_Hans_CN 槽 */
 	function getMeta(id) {
 		if (id === `display_name`) {
-			const r = db.prepare(`SELECT zh_CN FROM meta_l10n WHERE id = ?`).get(id)
-			return r ? r.zh_CN : null
+			const r = db.prepare(`SELECT zh_Hans_CN FROM meta_l10n WHERE id = ?`).get(id)
+			return r ? r.zh_Hans_CN : null
 		}
 		const r = db.prepare(`SELECT value FROM meta WHERE id = ?`).get(id)
 		return r ? r.value : null

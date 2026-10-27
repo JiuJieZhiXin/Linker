@@ -187,8 +187,8 @@ export function editTargetKeys() {
 }
 
 // 模态框确定（events.js 代理点击 data-act 后调用，只作用于栈顶）
-// name 弹窗按形态组 patch：bare {value} / dual {authoritative, value?} / full {authoritative, l10n}（作准槽必填，空则中止）
-// person-person 弹窗同理：bare {forward: {value}, backward: {value}} | dual/full {forward: {authoritative, value?, l10n?}, backward: {...}}
+// name 弹窗按形态组 patch：bare {value} / auth {authoritative} / dual {authoritative, value?} / full {authoritative, l10n}（作准槽必填，空则中止）
+// person-person 弹窗同理：bare {forward: {value}, backward: {value}} | auth {forward: {authoritative}, backward: {authoritative}} | dual/full {forward: {authoritative, value?, l10n?}, backward: {...}}
 export function submitModal() {
 	const ms = topModal()
 	if (!ms) return
@@ -207,6 +207,15 @@ export function submitModal() {
 				return
 			}
 			patch = {value: v}
+		} else if (mode === `auth`) {
+			// auth：单输入 = 作准槽（界面语言∉启用集时 bare 的退化形态，带标签渲染于 html.js）；作准必填
+			const v = authEl ? authEl.value.trim() : ``
+			if (!v) {
+				flagInvalid(authEl)
+				showToast(t(`error.authoritative_required`))
+				return
+			}
+			patch = {authoritative: v}
 		} else if (mode === `full`) {
 			const l10n = {}
 			// 实体弹窗：作准槽由 authoritative 写入，不重复收拢；其余语言行逐槽（空串清槽）
@@ -275,6 +284,7 @@ export function submitModal() {
 
 // 关系表单按形态收拢（新建 / 编辑同构）：
 // bare → 每方向 {value}（空值拒绝；创建场景服务端把 value 回填作准槽，编辑场景只写当前语言槽）
+// auth → 每方向 {authoritative}（界面语言∉启用集时 bare 的退化形态；作准必填）
 // dual/full → 每方向 {authoritative, l10n}（作准必填；l10n 逐槽收拢已渲染输入框，空串清槽——清作准槽由后端拒绝）
 // 校验失败：必填输入为空 → 红框 + 轻提示（返回 null 由调用方中止提交）
 function collectPersonPersonPatch(mode) {
@@ -289,6 +299,17 @@ function collectPersonPersonPatch(mode) {
 				return null
 			}
 			return {value}
+		}
+		if (mode === `auth`) {
+			// auth：每方向仅作准输入（界面语言∉启用集时 bare 的退化形态，带标签渲染于 html.js）；作准必填
+			const authEl = document.getElementById(`pp-${dir}-auth`)
+			const authoritative = authEl ? authEl.value.trim() : ``
+			if (!authoritative) {
+				flagInvalid(authEl)
+				showToast(t(`error.authoritative_required`))
+				return null
+			}
+			return {authoritative}
 		}
 		const authEl = document.getElementById(`pp-${dir}-auth`)
 		const authoritative = authEl ? authEl.value.trim() : ``
@@ -345,8 +366,8 @@ export function submitPick(dom) {
 
 // ---- 各类弹窗入口 ----
 export function openNameModal(opts) {
-	// 标题弹窗不受 adv1 影响：传入的 dual（adv1 且作准≠界面）在标题语义里按单输入形态提交
-	const mode = opts.isTitle && opts.mode === `dual` ? `bare` : (opts.mode || `bare`)
+	// 标题弹窗不受录入开关影响：传入的 dual（作准≠界面）或 auth（界面语言∉启用集）在标题语义里一律按单输入形态提交（nm-bare）
+	const mode = opts.isTitle && (opts.mode === `dual` || opts.mode === `auth`) ? `bare` : (opts.mode || `bare`)
 	showModal(nameModalHtml(opts), `name`, {
 		onSubmit: opts.onSubmit,
 		targets: opts.targets || [],

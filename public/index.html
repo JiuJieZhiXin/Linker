@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-Hans-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -10,7 +10,7 @@
             var lang = localStorage.getItem('linker:locale')
             if (lang) {
                 document.documentElement.lang = lang
-                if (lang === 'ar-SA') document.documentElement.dir = 'rtl'
+                if (lang === 'ar-Arab-SA') document.documentElement.dir = 'rtl'
             }
             document.documentElement.classList.add('i18n-boot')
             setTimeout(function () { document.documentElement.classList.remove('i18n-boot') }, 3000)
